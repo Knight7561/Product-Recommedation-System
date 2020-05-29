@@ -1,0 +1,34 @@
+body {
+  font-family: sans-serif;
+   background-image:url('https://d2q79iu7y748jz.cloudfront.net/s/_squarelogo/62c36898c1fccfb889efeb7ccefb50b7');
+   background-size: 1080px 600px;
+   
+}
+.b1 {
+  background-color: lightgreen;
+  height:50px;
+  width: 150px;
+
+}
+.v1 {
+	height: 50px;
+	width: 50px;
+}
+.v {
+	height: 50px;
+	width: 150px;
+}
+.v4 {
+  height: 350px;
+  width: 350px;
+}
+.v2{
+  padding-left:350px;
+}
+.v6{
+padding-right: 300px;
+}
+.b5{
+  padding-left: 400px;
+  width: 400px;
+}
