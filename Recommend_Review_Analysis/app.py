@@ -25,6 +25,13 @@ from sklearn.feature_extraction.text import TfidfTransformer
 
 from collections import Counter
 
+import math
+# import matplotlib.pyplot as plt
+import seaborn as sns
+import scipy.sparse
+from scipy.sparse import csr_matrix
+from scipy.sparse.linalg import svds
+
 app = Flask(__name__)
 app.secret_key = "secret key"
 
@@ -77,38 +84,80 @@ def clean_review(reviews):
     return cleaned_review
 
 
-def sort_coo(coo_matrix):
-    tuples = zip(coo_matrix.col, coo_matrix.data)
-    return sorted(tuples, key=lambda x: (x[1], x[0]), reverse=True)
+# def sort_coo(coo_matrix):
+#     tuples = zip(coo_matrix.col, coo_matrix.data)
+#     return sorted(tuples, key=lambda x: (x[1], x[0]), reverse=True)
  
-def extract_topn_from_vector(feature_names, sorted_items, topn=10):
-    """get the feature names and tf-idf score of top n items"""
+# def extract_topn_from_vector(feature_names, sorted_items, topn=10):
+#     """get the feature names and tf-idf score of top n items"""
     
-    #use only topn items from vector
-    sorted_items = sorted_items[:topn]
+#     #use only topn items from vector
+#     sorted_items = sorted_items[:topn]
  
-    score_vals = []
-    feature_vals = []
+#     score_vals = []
+#     feature_vals = []
     
-    # word index and corresponding tf-idf score
-    for idx, score in sorted_items:
+#     # word index and corresponding tf-idf score
+#     for idx, score in sorted_items:
         
-        #keep track of feature name and its corresponding score
-        score_vals.append(round(score, 3))
-        feature_vals.append(feature_names[idx])
+#         #keep track of feature name and its corresponding score
+#         score_vals.append(round(score, 3))
+#         feature_vals.append(feature_names[idx])
  
-    #create a tuples of feature,score
-    #results = zip(feature_vals,score_vals)
-    results= {}
-    for idx in range(len(feature_vals)):
-        results[feature_vals[idx]]=score_vals[idx]
+#     #create a tuples of feature,score
+#     #results = zip(feature_vals,score_vals)
+#     results= {}
+#     for idx in range(len(feature_vals)):
+#         results[feature_vals[idx]]=score_vals[idx]
     
-    return results
+#     return results
 
+
+def recommend_items(userID, pivot_df, preds_df, num_recommendations):
+    # index starts at 0  
+    user_idx = userID-1 
+    # Get and sort the user's ratings
+    sorted_user_ratings = pivot_df.iloc[user_idx].sort_values(ascending=False)
+    #sorted_user_ratings
+    sorted_user_predictions = preds_df.iloc[user_idx].sort_values(ascending=False)
+    #sorted_user_predictions
+    temp = pd.concat([sorted_user_ratings, sorted_user_predictions], axis=1,sort=False)
+       
+    temp.index.name = 'Recommended Items'
+    temp.columns = ['user_ratings', 'user_predictions']
+    temp = temp.loc[temp.user_ratings == 0]   
+    temp = temp.sort_values('user_predictions', ascending=False)
+    print(temp.head())
+    return temp
+
+def recom(userID,seller):
+    if seller == 1:
+        user_df=pd.read_excel('input/celler_1.xlsx')
+    elif seller == 2:
+        user_df=pd.read_excel('input/celler_2.xlsx')
+    
+    print(user_df.head())   
+    user_df = user_df.dropna()
+    counts = user_df.user.value_counts()
+    user_df_final = user_df[user_df.user.isin(counts[counts>=2].index)]
+    train_data = user_df_final
+    user_df_CF = train_data
+    pivot_df = user_df_CF.pivot_table(index = 'user', columns ='product_code', values = 'rating').fillna(0)
+    pivot_df['user_index'] = np.arange(0, pivot_df.shape[0], 1)
+    pivot_df.set_index(['user_index'], inplace=True)
+    U, sigma, Vt = svds(pivot_df, k = 8)
+    sigma = np.diag(sigma)
+    #Predicted ratings
+    all_user_predicted_ratings = np.dot(np.dot(U, sigma), Vt) 
+
+    # Convert predicted ratings to dataframe
+    preds_df = pd.DataFrame(all_user_predicted_ratings, columns = pivot_df.columns)
+    a = recommend_items(userID, pivot_df, preds_df, 5)
+    return a
 
 @app.route("/")
 def index():
-    return render_template("index1.html")
+    return render_template("index.html")
 
 
 def predict_result(data,text):
@@ -132,44 +181,16 @@ def predict_result(data,text):
             n_review.append(text[i])
     return p_review,n_review
 
-@app.route('/predict' ,methods=['POST','GET'])
-def predict():
-
-    p = ['Geneva Platinum Silicone Strap Analogue Watch for Women & Girls - GP-379',
-       "Geneva Platinum Analogue Gold Dial Women's Watch -GNV01",
-       "IIk Collection Watches Stainless Steel Chain Day and Date Analogue Silver Dial Women's Watch",
-       "NUBELA Analogue Prizam Glass Black Dial Girl's Watch",
-       'Analogue Pink',
-       "Sonata Analog Champagne Dial Women's Watch-NK87018YM01",
-       "Sonata Analog White Dial Women's Watch -NJ8989PP03C",
-       "Everyday Analog Black Dial Women's Watch -NK8085SM01",
-       "Sonata SFAL Analog Silver Dial Women's Watch -NK8080SM01",
-       "Timewear Analogue Round Beige Dial Women's Watch - 107Wdtl",
-       "TIMEWEAR Analogue Brown Dial Women's Watch - 134Bdtl",
-       "Sonata SFAL Analog Silver Dial Women's Watch -NK8080SM-3372",
-       "Adamo Analog Blue Dial Women's Watch-9710SM01",
-       "ADAMO Aritocrat Women's & Girl's Watch BG-335",
-       "Imperious Analog Women's Watch 1021-1031",
-       "IIK Collection Watches Analogue Silver Dial Girl's & Women's Analogue Watch - IIK-1033W",
-       "Sonata Analog White Dial Women's Watch -NJ8976SM01W",
-       "Geneva Platinum Analogue Rose Gold Dial Women'S Watch- Gp-649",
-       "Geneva Platinum Analogue Rose Gold Dial Women's Watch- Gp-649",
-       "A R Sales Analogue Girl's and Women's Watch",
-       "Foxter Bangel Analog White Dial Women's Watch",
-       'Howdy Women Watch']
+@app.route('/res' ,methods=['POST','GET'])
+def res():
     prodect = []
-    if request.method == 'POST':
-        prodect.append(int((request.form['q2'])))
-
-    print(prodect)
-    df1 = pd.read_csv("input/Final_reviews.csv")
-
-    # df1['product_name'].unique()
-    p_name = p[prodect[0]-1]
-
-
-    core_review = []
     
+    if request.method == 'POST':
+        prodect.append(request.form['q1'])
+    p_name = prodect[0]
+    print(p_name)
+    core_review = []
+    df1 = pd.read_csv("input/Final_reviews.csv")
     for i,j in df1.iterrows():
         if j['product_name'] == p_name:
             # if j['Experience'] >= 5 and j['Helpful_Votes'] >=20 and j['Purchase'] == 'Verified Purchase':
@@ -197,8 +218,70 @@ def predict():
     # res = [p_name,p_re,p_keys,n_re,n_keys]
         
     print(p_re,'\n',n_re)
+    return render_template("result1.html",p_name=p_name,p_re=p_re,n_re=n_re)
 
-    return render_template("result1.html" , p_name = p_name,p_re = p_re, n_re=n_re)
+@app.route('/predict' ,methods=['POST','GET'])
+def predict():
+
+    p = ['Geneva Platinum Silicone Strap Analogue Watch for Women & Girls - GP-379',
+       "Geneva Platinum Analogue Gold Dial Women's Watch -GNV01",
+       "IIk Collection Watches Stainless Steel Chain Day and Date Analogue Silver Dial Women's Watch",
+       "NUBELA Analogue Prizam Glass Black Dial Girl's Watch",
+       'Analogue Pink',
+       "Sonata Analog Champagne Dial Women's Watch-NK87018YM01",
+       "Sonata Analog White Dial Women's Watch -NJ8989PP03C",
+       "Everyday Analog Black Dial Women's Watch -NK8085SM01",
+       "Sonata SFAL Analog Silver Dial Women's Watch -NK8080SM01",
+       "Timewear Analogue Round Beige Dial Women's Watch - 107Wdtl",
+       "TIMEWEAR Analogue Brown Dial Women's Watch - 134Bdtl",
+       "Sonata SFAL Analog Silver Dial Women's Watch -NK8080SM-3372",
+       "Adamo Analog Blue Dial Women's Watch-9710SM01",
+       "ADAMO Aritocrat Women's & Girl's Watch BG-335",
+       "Imperious Analog Women's Watch 1021-1031",
+       "IIK Collection Watches Analogue Silver Dial Girl's & Women's Analogue Watch - IIK-1033W",
+       "Sonata Analog White Dial Women's Watch -NJ8976SM01W",
+       "Geneva Platinum Analogue Rose Gold Dial Women'S Watch- Gp-649",
+       "Geneva Platinum Analogue Rose Gold Dial Women's Watch- Gp-649",
+       "A R Sales Analogue Girl's and Women's Watch",
+       "Foxter Bangel Analog White Dial Women's Watch",
+       'Howdy Women Watch']
+    prodect = []
+    cell = []
+    if request.method == 'POST':
+        prodect.append(int(request.form['q1']))
+        cell.append(int(request.form['q2']))
+
+    print(prodect[0],cell[0])
+    
+
+    recomen_pro = recom(prodect[0],cell[0])
+    # a = recom(1,0)
+    l=recomen_pro.index[0:]
+    res = list(l)
+    # res
+    names = []
+    for i in res:
+        names.append(p[i])
+    # df1['product_name'].unique()
+    c1 = ["NUBELA Analogue Prizam Glass Black Dial Girl's Watch",
+       'Analogue Pink',
+       "Sonata Analog Champagne Dial Women's Watch-NK87018YM01",
+       "Sonata Analog White Dial Women's Watch -NJ8989PP03C",
+       "Everyday Analog Black Dial Women's Watch -NK8085SM01"]
+    c2 = ["Sonata Analog White Dial Women's Watch -NJ8976SM01W",
+       "Geneva Platinum Analogue Rose Gold Dial Women'S Watch- Gp-649",
+       "Geneva Platinum Analogue Rose Gold Dial Women's Watch- Gp-649",
+       "A R Sales Analogue Girl's and Women's Watch",
+       "Foxter Bangel Analog White Dial Women's Watch"]
+    if len(names) <= 0 and cell[0] == 1:
+        for i in c1:
+            names.append(i)
+    elif len(names) <= 0 and cell[0] == 2:
+        for i in c2:
+            names.append(i)
+    print(names)
+
+    return render_template("recom.html" , p_name = names)
 
 
 
