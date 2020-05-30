@@ -154,10 +154,26 @@ def recom(userID,seller):
     preds_df = pd.DataFrame(all_user_predicted_ratings, columns = pivot_df.columns)
     a = recommend_items(userID, pivot_df, preds_df, 5)
     return a
+###################################################################
+###################################################################
+###################################################################
+###################################################################
+###################################################################
+###################################################################
+###################################################################
+###################################################################
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("indexHome.html")
+
+@app.route("/customer")
+def indexCustomer():
+    return render_template("indexCustomer.html")
+
+@app.route("/seller")
+def indexSeller():
+    return render_template("indexSeller.html")
 
 
 def predict_result(data,text):
@@ -183,11 +199,11 @@ def predict_result(data,text):
 
 @app.route('/res' ,methods=['POST','GET'])
 def res():
-    prodect = []
+    product = []
     
     if request.method == 'POST':
-        prodect.append(request.form['q1'])
-    p_name = prodect[0]
+        product.append(request.form['q1'])
+    p_name = product[0]
     print(p_name)
     core_review = []
     df1 = pd.read_csv("input/Final_reviews.csv")
@@ -218,10 +234,10 @@ def res():
     # res = [p_name,p_re,p_keys,n_re,n_keys]
         
     print(p_re,'\n',n_re)
-    return render_template("result1.html",p_name=p_name,p_re=p_re,n_re=n_re)
+    return render_template("result1Customer.html",p_name=p_name,p_re=p_re,n_re=n_re)
 
-@app.route('/predict' ,methods=['POST','GET'])
-def predict():
+@app.route('/predictCustomer' ,methods=['POST','GET'])
+def predictCustomer():
 
     p = ['Geneva Platinum Silicone Strap Analogue Watch for Women & Girls - GP-379',
        "Geneva Platinum Analogue Gold Dial Women's Watch -GNV01",
@@ -245,16 +261,16 @@ def predict():
        "A R Sales Analogue Girl's and Women's Watch",
        "Foxter Bangel Analog White Dial Women's Watch",
        'Howdy Women Watch']
-    prodect = []
+    product = []
     cell = []
     if request.method == 'POST':
-        prodect.append(int(request.form['q1']))
+        product.append(int(request.form['q1']))
         cell.append(int(request.form['q2']))
 
-    print(prodect[0],cell[0])
+    print(product[0],cell[0])
     
 
-    recomen_pro = recom(prodect[0],cell[0])
+    recomen_pro = recom(product[0],cell[0])
     # a = recom(1,0)
     l=recomen_pro.index[0:]
     res = list(l)
@@ -281,7 +297,97 @@ def predict():
             names.append(i)
     print(names)
 
-    return render_template("recom.html" , p_name = names)
+    return render_template("recomCustomer.html" , p_name = names)
+
+
+
+
+
+
+
+
+@app.route('/predictSeller' ,methods=['POST','GET'])
+def predictSeller():
+
+    p = ['Geneva Platinum Silicone Strap Analogue Watch for Women & Girls - GP-379',
+       "Geneva Platinum Analogue Gold Dial Women's Watch -GNV01",
+       "IIk Collection Watches Stainless Steel Chain Day and Date Analogue Silver Dial Women's Watch",
+       "NUBELA Analogue Prizam Glass Black Dial Girl's Watch",
+       'Analogue Pink',
+       "Sonata Analog Champagne Dial Women's Watch-NK87018YM01",
+       "Sonata Analog White Dial Women's Watch -NJ8989PP03C",
+       "Everyday Analog Black Dial Women's Watch -NK8085SM01",
+       "Sonata SFAL Analog Silver Dial Women's Watch -NK8080SM01",
+       "Timewear Analogue Round Beige Dial Women's Watch - 107Wdtl",
+       "TIMEWEAR Analogue Brown Dial Women's Watch - 134Bdtl",
+       "Sonata SFAL Analog Silver Dial Women's Watch -NK8080SM-3372",
+       "Adamo Analog Blue Dial Women's Watch-9710SM01",
+       "ADAMO Aritocrat Women's & Girl's Watch BG-335",
+       "Imperious Analog Women's Watch 1021-1031",
+       "IIK Collection Watches Analogue Silver Dial Girl's & Women's Analogue Watch - IIK-1033W",
+       "Sonata Analog White Dial Women's Watch -NJ8976SM01W",
+       "Geneva Platinum Analogue Rose Gold Dial Women'S Watch- Gp-649",
+       "Geneva Platinum Analogue Rose Gold Dial Women's Watch- Gp-649",
+       "A R Sales Analogue Girl's and Women's Watch",
+       "Foxter Bangel Analog White Dial Women's Watch",
+       'Howdy Women Watch']
+    product = []
+    if request.method == 'POST':
+        product.append(int((request.form['q2'])))
+    if request.method == 'GET':
+        product.append(int((request.args['q2'])))
+
+    print(product)
+    df1 = pd.read_csv("input/Final_reviews.csv")
+
+    # df1['product_name'].unique()
+    p_name = p[product[0]-1]
+
+
+    core_review = []
+    
+    for i,j in df1.iterrows():
+        if j['product_name'] == p_name:
+            # if j['Experience'] >= 5 and j['Helpful_Votes'] >=20 and j['Purchase'] == 'Verified Purchase':
+            core_review.append(j['Text'])   
+
+    cleaned_text = clean_review(core_review)
+
+    sequences_text_token = trained_tokenizer.texts_to_sequences(cleaned_text)
+
+    data = pad_sequences(sequences_text_token, maxlen=140)
+    print(data)
+
+    # p_cleaned_text = clean_review(p_review)
+    # n_cleaned_text = clean_review(n_review)
+
+    p_review,n_review = predict_result(data=data,text=cleaned_text)
+
+    
+    p_re = random.sample(p_review,3)
+    # p_keys = random.sample(p_key,3)
+    n_re = random.sample(n_review,3)
+    # n_keys = random.sample(n_key,3)
+
+     
+    # res = [p_name,p_re,p_keys,n_re,n_keys]
+        
+    print(p_re,'\n',n_re)
+
+    return render_template("result1Seller.html" , p_name = p_name,p_re = p_re, n_re=n_re)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
