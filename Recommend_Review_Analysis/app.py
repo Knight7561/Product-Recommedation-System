@@ -128,7 +128,7 @@ def recommend_items(userID, pivot_df, preds_df, num_recommendations):
     temp = temp.loc[temp.user_ratings == 0]   
     temp = temp.sort_values('user_predictions', ascending=False)
     print(temp.head())
-    return temp
+    return temp.head(num_recommendations)
 
 def recom(userID,seller):
     if seller == 1:
@@ -139,20 +139,32 @@ def recom(userID,seller):
     print(user_df.head())   
     user_df = user_df.dropna()
     counts = user_df.user.value_counts()
+    #print("counts is",counts.index)
     user_df_final = user_df[user_df.user.isin(counts[counts>=2].index)]
     train_data = user_df_final
     user_df_CF = train_data
     pivot_df = user_df_CF.pivot_table(index = 'user', columns ='product_code', values = 'rating').fillna(0)
+    #print("pivot_df is \n",pivot_df)
     pivot_df['user_index'] = np.arange(0, pivot_df.shape[0], 1)
+    #print("pivot_df after  is \n",pivot_df)
     pivot_df.set_index(['user_index'], inplace=True)
+    #print("pivot_df after setting is \n",pivot_df)
     U, sigma, Vt = svds(pivot_df, k = 8)
+    #print("U is ",U)
+    #print("sigma is ",sigma)
+    #print("Vt is ",Vt)
     sigma = np.diag(sigma)
+
+    #print("sigma diagonal matrix is",sigma)
     #Predicted ratings
     all_user_predicted_ratings = np.dot(np.dot(U, sigma), Vt) 
+    #print("all_user_predicted_ratings",all_user_predicted_ratings)
 
     # Convert predicted ratings to dataframe
     preds_df = pd.DataFrame(all_user_predicted_ratings, columns = pivot_df.columns)
+    #print("preds_df is ",preds_df)
     a = recommend_items(userID, pivot_df, preds_df, 5)
+    #print("a is ",a)
     return a
 ###################################################################
 ###################################################################
@@ -185,6 +197,7 @@ def predict_result(data,text):
     model = load_trained_model(str_path, wt_path)
 
     result = model.predict(data)
+    print("Predicted result without flattening is ",result)
     Y_pred = np.round(result.flatten())
     print(Y_pred)
     for i in range(len(Y_pred)):
@@ -203,6 +216,7 @@ def res():
     
     if request.method == 'POST':
         product.append(request.form['q1'])
+    print("Product selected is ",product)
     p_name = product[0]
     print(p_name)
     core_review = []
@@ -212,11 +226,15 @@ def res():
             # if j['Experience'] >= 5 and j['Helpful_Votes'] >=20 and j['Purchase'] == 'Verified Purchase':
             core_review.append(j['Text'])   
 
+    print("Core Reviews before cleaning is",core_review)
     cleaned_text = clean_review(core_review)
+    print("Core Reviews After cleaning is",cleaned_text)
 
     sequences_text_token = trained_tokenizer.texts_to_sequences(cleaned_text)
+    print("sequences_text_token is",sequences_text_token)
 
     data = pad_sequences(sequences_text_token, maxlen=140)
+    print("data is ",data,"   dd")
     print(data)
 
     # p_cleaned_text = clean_review(p_review)
@@ -224,10 +242,10 @@ def res():
 
     p_review,n_review = predict_result(data=data,text=cleaned_text)
 
-    
-    p_re = random.sample(p_review,3)
+    print("len of positive is",len(p_review),"len of negetive is",len(n_review))
+    p_re = random.sample(p_review,5)
     # p_keys = random.sample(p_key,3)
-    n_re = random.sample(n_review,3)
+    n_re = random.sample(n_review,5)
     # n_keys = random.sample(n_key,3)
 
      
@@ -268,16 +286,18 @@ def predictCustomer():
         cell.append(int(request.form['q2']))
 
     print(product[0],cell[0])
-    
-
     recomen_pro = recom(product[0],cell[0])
     # a = recom(1,0)
+    # print("recomen_pro",recomen_pro)
+    
     l=recomen_pro.index[0:]
     res = list(l)
+    # print("res",res)
     # res
     names = []
     for i in res:
         names.append(p[i])
+    # print("names is: ",names)
     # df1['product_name'].unique()
     c1 = ["NUBELA Analogue Prizam Glass Black Dial Girl's Watch",
        'Analogue Pink',
@@ -295,9 +315,9 @@ def predictCustomer():
     elif len(names) <= 0 and cell[0] == 2:
         for i in c2:
             names.append(i)
-    print(names)
-
+    # print("names after apend is",names)
     return render_template("recomCustomer.html" , p_name = names)
+
 
 
 
@@ -308,7 +328,6 @@ def predictCustomer():
 
 @app.route('/predictSeller' ,methods=['POST','GET'])
 def predictSeller():
-
     p = ['Geneva Platinum Silicone Strap Analogue Watch for Women & Girls - GP-379',
        "Geneva Platinum Analogue Gold Dial Women's Watch -GNV01",
        "IIk Collection Watches Stainless Steel Chain Day and Date Analogue Silver Dial Women's Watch",
