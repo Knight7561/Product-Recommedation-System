@@ -41,6 +41,13 @@ model_str_file = 'model_structure.json'
 model_weights_file = 'model_weights.h5'
 cword_file = 'cword_dict.pkl'
 tokenizer_file = 'tokens.pkl'
+review_file="input/Final_reviews.csv"
+product_category="Watches"
+model_str_file_camera = 'model_structure_camera.json'
+model_weights_file_camera = 'model_weights_camera.h5'
+cword_file = 'cword_dict.pkl'
+tokenizer_file_camera = 'tokensCamera.pkl'
+review_file_camera="input/Connected Camera reviews.csv"
 
 class_names = [
      'neg',
@@ -52,7 +59,7 @@ cList = pkl.load(open(os.path.join(input_dir,cword_file),'rb'))
 
 c_re = re.compile('(%s)' % '|'.join(cList.keys()))
 
-trained_tokenizer = pkl.load(open(os.path.join(model_dir,tokenizer_file),'rb'))
+
 
 def load_trained_model(model_str_path, model_wt_path):
     f = Path(model_str_path)
@@ -185,7 +192,7 @@ def indexCustomer():
 
 @app.route("/seller")
 def indexSeller():
-    return render_template("indexSeller.html")
+    return render_template("sellerSelect.html")
 
 
 def predict_result(data,text):
@@ -193,16 +200,14 @@ def predict_result(data,text):
     n_review = []
     str_path = os.path.join(model_dir,model_str_file)
     wt_path = os.path.join(model_dir,model_weights_file)
-
     model = load_trained_model(str_path, wt_path)
-
     result = model.predict(data)
-    print("Predicted result without flattening is ",result)
+    #print("Predicted result without flattening is ",result)
     Y_pred = np.round(result.flatten())
-    print(Y_pred)
+    #print(Y_pred)
     for i in range(len(Y_pred)):
-        print("Text : ",text[i])
-        print("Result : ",class_names[int(Y_pred[i])])
+        #DisableCommentprint("Text : ",text[i])
+        #DisableCommentprint("Result : ",class_names[int(Y_pred[i])])
         m = class_names[int(Y_pred[i])]
         if m == 'pos':
             p_review.append(text[i])
@@ -212,37 +217,40 @@ def predict_result(data,text):
 
 @app.route('/res' ,methods=['POST','GET'])
 def res():
+    global review_file
     product = []
-    
     if request.method == 'POST':
         product.append(request.form['q1'])
     print("Product selected is ",product)
     p_name = product[0]
-    print(p_name)
+    #print(p_name)
     core_review = []
-    df1 = pd.read_csv("input/Final_reviews.csv")
+    #print("review file path is ",review_file)
+    df1 = pd.read_csv(review_file)###########
+    #print("df1 is ",df1)
     for i,j in df1.iterrows():
         if j['product_name'] == p_name:
             # if j['Experience'] >= 5 and j['Helpful_Votes'] >=20 and j['Purchase'] == 'Verified Purchase':
             core_review.append(j['Text'])   
 
-    print("Core Reviews before cleaning is",core_review)
+    #print("Core Reviews before cleaning is",core_review)
     cleaned_text = clean_review(core_review)
-    print("Core Reviews After cleaning is",cleaned_text)
+    #print("Core Reviews After cleaning is",cleaned_text)
 
-    sequences_text_token = trained_tokenizer.texts_to_sequences(cleaned_text)
-    print("sequences_text_token is",sequences_text_token)
+    trained_tokenizer = pkl.load(open(os.path.join(model_dir,tokenizer_file),'rb'))
+    sequences_text_token = trained_tokenizer.texts_to_sequences(cleaned_text)#################
+    #print("sequences_text_token is",sequences_text_token)
 
     data = pad_sequences(sequences_text_token, maxlen=140)
-    print("data is ",data,"   dd")
-    print(data)
+    #print("data is ",data,"   dd")
+    #DISABLE COMMENTprint(data)
 
     # p_cleaned_text = clean_review(p_review)
     # n_cleaned_text = clean_review(n_review)
 
     p_review,n_review = predict_result(data=data,text=cleaned_text)
 
-    print("len of positive is",len(p_review),"len of negetive is",len(n_review))
+    #print("len of positive is",len(p_review),"len of negetive is",len(n_review))
     p_re = random.sample(p_review,5)
     # p_keys = random.sample(p_key,3)
     n_re = random.sample(n_review,5)
@@ -251,79 +259,162 @@ def res():
      
     # res = [p_name,p_re,p_keys,n_re,n_keys]
         
-    print(p_re,'\n',n_re)
-    return render_template("result1Customer.html",p_name=p_name,p_re=p_re,n_re=n_re)
+    #DISABLE COMMENTprint(p_re,'\n',n_re)
+
+    #Collection of metadata about the product
+    df_metadata_watch=pd.read_csv("input/watch_analystics_final.csv")
+    for e,i in df_metadata_watch.iterrows():
+        if(i['Product_name']==p_name):
+            metadata={}
+            metadata['p_name']=i["Product_name"]
+            metadata["total_no_reviews"]=i["Total"]
+            metadata["rate_1"]=i["1_star"]
+            metadata["rate_2"]=i["2_star"]
+            metadata["rate_3"]=i["3_star"]
+            metadata["rate_4"]=i["4_star"]
+            metadata["rate_5"]=i["5_star"]
+            metadata["imgLink"]=i["Image_Link"]
+    print("\n\n\n\n\nmetadata is",metadata)
+    return render_template("result1Customer.html",p_name=p_name,p_re=p_re,n_re=n_re,p_re_len=len(p_review),n_re_len=len(n_review),metadata=metadata)
 
 @app.route('/predictCustomer' ,methods=['POST','GET'])
 def predictCustomer():
+    print("q3 is ",request.form['q3'])
+    if((int(request.form['q3'])==2)):
+        global review_file
+        product_category="Camera"
+        model_str_file=model_str_file_camera
+        model_weights_file=model_weights_file_camera
+        cword_file = 'cword_dict.pkl'
+        tokenizer_file=tokenizer_file_camera
+        review_file=review_file_camera
+        print("Items to be stocked at ",review_file)
+        p=['Canon SX50', 'Canon T5 Bundle v2',
+       'Nikon COOLPIX AW100 16 MP CMOS Waterproof Digital Camera with GPS and Full HD 1080p Video',
+       'Nikon COOLPIX AW110 16 MP Waterproof Digital Camera with Built-In Wi-Fi',
+       'Nikon COOLPIX S3600 20.1 MP Digital Camera with 8x Zoom NIKKOR Lens and 720p HD Video',
+       'Panasonic  Digital Camera with 3-Inch LCD',
+       'Panasonic Lumix 12.1 MP Digital Camera with CMOS Sensor and 24x Optical Zoom - Black',
+       'Panasonic LUMIX DMC-FZ70 16.1 MP Digital Camera with 60x Optical Image Stabilized Zoom and 3-Inch LCD (Black)',
+       'Panasonic LUMIX DMC-LX7K 10.1 MP Digital Camera with 3.8x Optical zoom and 3.0-inch LCD -  Black',
+       'Panasonic Lumix DMC-TS25 16.1 MP Tough Digital Camera with 8x Intelligent Zoom',
+       'Samsung SmartCam HD Pro 1080p Full-HD Wi-Fi Camera',
+       'Samsung SNH-1011 Wireless IP Camera',
+       'Samsung WB1100F 16.2MP CMOS Smart WiFi & NFC Digital Camera with 35x Optical Zoom, 3.0" LCD and 1080p HD Video',
+       'Sony Alpha a5000 Mirrorless Digital Camera with 16-50mm OSS Lens (White)',
+       'Nikon COOLPIX AW120', 'Nikon Coolpix L330 Digital Camera (Black)',
+       'Nikon COOLPIX L810 16.1 MP Digital Camera with 26x Zoom NIKKOR ED Glass Lens and 3-inch LCD',
+       'Nikon COOLPIX L820 16 MP Digital Camera with 30x Zoom',
+       'Nikon COOLPIX P520 18.1 MP Digital Camera with 42x Zoom',
+       'Nikon COOLPIX S32',
+       'Nikon COOLPIX S3500 20.1MP Digital Camera with 7x Zoom',
+       'Sony Alpha a6000 Mirrorless Digital Camera with 16-50mm Power Zoom Lens']
+        product = []
+        cell = []
+        if request.method == 'POST':
+            product.append(int(request.form['q1']))
+            cell.append(int(request.form['q2']))
+        print(product[0],cell[0])
+        recomen_pro = recom(product[0],cell[0])
+        l=recomen_pro.index[0:]
+        res = list(l)
+        # print("res",res)
+        # res
+        names = []
+        for i in res:
+            names.append(p[i])
+        # print("names is: ",names)
+        # df1['product_name'].unique()
+    else:
+        product_category="Watches"
+        model_str_file = 'model_structure.json'
+        model_weights_file = 'model_weights.h5'
+        cword_file = 'cword_dict.pkl'
+        tokenizer_file = 'tokens.pkl'
+        review_file="input/Final_reviews.csv"
+        p = ['Geneva Platinum Silicone Strap Analogue Watch for Women & Girls - GP-379',
+        "Geneva Platinum Analogue Gold Dial Women's Watch -GNV01",
+        "IIk Collection Watches Stainless Steel Chain Day and Date Analogue Silver Dial Women's Watch",
+        "NUBELA Analogue Prizam Glass Black Dial Girl's Watch",
+        'Analogue Pink',
+        "Sonata Analog Champagne Dial Women's Watch-NK87018YM01",
+        "Sonata Analog White Dial Women's Watch -NJ8989PP03C",
+        "Everyday Analog Black Dial Women's Watch -NK8085SM01",
+        "Sonata SFAL Analog Silver Dial Women's Watch -NK8080SM01",
+        "Timewear Analogue Round Beige Dial Women's Watch - 107Wdtl",
+        "TIMEWEAR Analogue Brown Dial Women's Watch - 134Bdtl",
+        "Sonata SFAL Analog Silver Dial Women's Watch -NK8080SM-3372",
+        "Adamo Analog Blue Dial Women's Watch-9710SM01",
+        "ADAMO Aritocrat Women's & Girl's Watch BG-335",
+        "Imperious Analog Women's Watch 1021-1031",
+        "IIK Collection Watches Analogue Silver Dial Girl's & Women's Analogue Watch - IIK-1033W",
+        "Sonata Analog White Dial Women's Watch -NJ8976SM01W",
+        "Geneva Platinum Analogue Rose Gold Dial Women'S Watch- Gp-649",
+        "Geneva Platinum Analogue Rose Gold Dial Women's Watch- Gp-649",
+        "A R Sales Analogue Girl's and Women's Watch",
+        "Foxter Bangel Analog White Dial Women's Watch",
+        'Howdy Women Watch']
+        product = []
+        cell = []
+        if request.method == 'POST':
+            product.append(int(request.form['q1']))
+            cell.append(int(request.form['q2']))
 
-    p = ['Geneva Platinum Silicone Strap Analogue Watch for Women & Girls - GP-379',
-       "Geneva Platinum Analogue Gold Dial Women's Watch -GNV01",
-       "IIk Collection Watches Stainless Steel Chain Day and Date Analogue Silver Dial Women's Watch",
-       "NUBELA Analogue Prizam Glass Black Dial Girl's Watch",
-       'Analogue Pink',
-       "Sonata Analog Champagne Dial Women's Watch-NK87018YM01",
-       "Sonata Analog White Dial Women's Watch -NJ8989PP03C",
-       "Everyday Analog Black Dial Women's Watch -NK8085SM01",
-       "Sonata SFAL Analog Silver Dial Women's Watch -NK8080SM01",
-       "Timewear Analogue Round Beige Dial Women's Watch - 107Wdtl",
-       "TIMEWEAR Analogue Brown Dial Women's Watch - 134Bdtl",
-       "Sonata SFAL Analog Silver Dial Women's Watch -NK8080SM-3372",
-       "Adamo Analog Blue Dial Women's Watch-9710SM01",
-       "ADAMO Aritocrat Women's & Girl's Watch BG-335",
-       "Imperious Analog Women's Watch 1021-1031",
-       "IIK Collection Watches Analogue Silver Dial Girl's & Women's Analogue Watch - IIK-1033W",
-       "Sonata Analog White Dial Women's Watch -NJ8976SM01W",
-       "Geneva Platinum Analogue Rose Gold Dial Women'S Watch- Gp-649",
-       "Geneva Platinum Analogue Rose Gold Dial Women's Watch- Gp-649",
-       "A R Sales Analogue Girl's and Women's Watch",
-       "Foxter Bangel Analog White Dial Women's Watch",
-       'Howdy Women Watch']
-    product = []
-    cell = []
-    if request.method == 'POST':
-        product.append(int(request.form['q1']))
-        cell.append(int(request.form['q2']))
-
-    print(product[0],cell[0])
-    recomen_pro = recom(product[0],cell[0])
-    # a = recom(1,0)
-    # print("recomen_pro",recomen_pro)
-    
-    l=recomen_pro.index[0:]
-    res = list(l)
-    # print("res",res)
-    # res
-    names = []
-    for i in res:
-        names.append(p[i])
-    # print("names is: ",names)
-    # df1['product_name'].unique()
-    c1 = ["NUBELA Analogue Prizam Glass Black Dial Girl's Watch",
-       'Analogue Pink',
-       "Sonata Analog Champagne Dial Women's Watch-NK87018YM01",
-       "Sonata Analog White Dial Women's Watch -NJ8989PP03C",
-       "Everyday Analog Black Dial Women's Watch -NK8085SM01"]
-    c2 = ["Sonata Analog White Dial Women's Watch -NJ8976SM01W",
-       "Geneva Platinum Analogue Rose Gold Dial Women'S Watch- Gp-649",
-       "Geneva Platinum Analogue Rose Gold Dial Women's Watch- Gp-649",
-       "A R Sales Analogue Girl's and Women's Watch",
-       "Foxter Bangel Analog White Dial Women's Watch"]
-    if len(names) <= 0 and cell[0] == 1:
-        for i in c1:
-            names.append(i)
-    elif len(names) <= 0 and cell[0] == 2:
-        for i in c2:
-            names.append(i)
-    # print("names after apend is",names)
+        print(product[0],cell[0])
+        recomen_pro = recom(product[0],cell[0])
+        # a = recom(1,0)
+        # print("recomen_pro",recomen_pro)
+        
+        l=recomen_pro.index[0:]
+        res = list(l)
+        # print("res",res)
+        # res
+        names = []
+        for i in res:
+            names.append(p[i])
+        # print("names is: ",names)
+        # df1['product_name'].unique()
+        c1 = ["NUBELA Analogue Prizam Glass Black Dial Girl's Watch",
+        'Analogue Pink',
+        "Sonata Analog Champagne Dial Women's Watch-NK87018YM01",
+        "Sonata Analog White Dial Women's Watch -NJ8989PP03C",
+        "Everyday Analog Black Dial Women's Watch -NK8085SM01"]
+        c2 = ["Sonata Analog White Dial Women's Watch -NJ8976SM01W",
+        "Geneva Platinum Analogue Rose Gold Dial Women'S Watch- Gp-649",
+        "Geneva Platinum Analogue Rose Gold Dial Women's Watch- Gp-649",
+        "A R Sales Analogue Girl's and Women's Watch",
+        "Foxter Bangel Analog White Dial Women's Watch"]
+        if len(names) <= 0 and cell[0] == 1:
+            for i in c1:
+                names.append(i)
+        elif len(names) <= 0 and cell[0] == 2:
+            for i in c2:
+                names.append(i)
+        # print("names after apend is",names)
     return render_template("recomCustomer.html" , p_name = names)
 
 
+@app.route('/sellerWatch' ,methods=['POST','GET'])
+def sellerWatch():
+    id=(int((request.args['id'])))
+    df_items=pd.read_csv("input/Final_reviews.csv")
+    items_numbers=df_items.product_name.value_counts().rename_axis('Product names').reset_index(name='Count')
+    print("items_numbers ",items_numbers)
+    if(id==1):
+        return render_template("indexSeller.html" , productname=items_numbers['Product names'][0:11],reviewcount=items_numbers['Count'][0:11])
+    elif(id==2):
+        return render_template("indexSeller.html" , productname=items_numbers['Product names'][11:],reviewcount=items_numbers['Count'][11:])
 
-
-
-
-
+@app.route('/sellerCamera' ,methods=['POST','GET'])
+def sellerCamera():
+    id=(int((request.args['id'])))
+    df_items=pd.read_csv("input/Connected Camera reviews.csv")
+    items_numbers=df_items.product_name.value_counts().rename_axis('Product names').reset_index(name='Count')
+    # print("items_numbers ",items_numbers['Product names'][11:])
+    if(id==1):
+        return render_template("indexSeller.html" , productname=items_numbers['Product names'][0:11],reviewcount=items_numbers['Count'][0:11])
+    elif(id==2):
+        return render_template("indexSeller.html" , productname=items_numbers['Product names'][11:],reviewcount=items_numbers['Count'][11:])
 
 
 @app.route('/predictSeller' ,methods=['POST','GET'])
@@ -372,6 +463,7 @@ def predictSeller():
 
     cleaned_text = clean_review(core_review)
 
+    trained_tokenizer = pkl.load(open(os.path.join(model_dir,tokenizer_file),'rb'))
     sequences_text_token = trained_tokenizer.texts_to_sequences(cleaned_text)
 
     data = pad_sequences(sequences_text_token, maxlen=140)
@@ -394,21 +486,6 @@ def predictSeller():
     print(p_re,'\n',n_re)
 
     return render_template("result1Seller.html" , p_name = p_name,p_re = p_re, n_re=n_re)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 if __name__ == '__main__':
     app.run(debug=True,threaded=False)

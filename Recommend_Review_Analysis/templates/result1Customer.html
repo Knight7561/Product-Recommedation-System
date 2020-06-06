@@ -7,62 +7,111 @@
     <title>Result</title>
     <link rel="stylesheet" href="{{ url_for('static',filename='style1.css') }}">
 <style type="text/css">
-  TD{
-    color: #ff1a1a;
+  td,tr{
+    padding: 10px;
   }
 
-  table    { border:ridge 5px red; background-color:#F6F6F6; color:#FFF; }
-  table td { border:inset 1px #000; }
+  /* table    { border:ridge 5px red; background-color:#F6F6F6; color:#FFF; }
+  table td { border:inset 1px #000; } */
   
   #example1 {
    background-image:url("static/min.jpeg");
   background-repeat: repeat;
   background-size: 1500px 800px ;
 }
-  /*h4{
-    color: white;
+  
+.container {
+  position: relative;
+  max-width: 800px; /* Maximum width */
+  margin: 0; /* Center it */
+}
 
-  }*/
+.container .content {
+  position: absolute; /* Position the background text */
+  bottom: 0; /* At the bottom. Use top:0 to append it to the top */
+  background: rgb(0, 0, 0); /* Fallback color */
+  background: rgba(0, 0, 0, 0.5); /* Black background with 0.5 opacity */
+  color: #f1f1f1; /* Grey text */
+  width: 100%; /* Full width */
+  margin-right: 20px; /* Some padding */
+}
 </style>
 </head>
 <body id="example1">
   <center><img src="{{ url_for('static',filename='head.png') }}" width="1200" height="70"></center> 
  <!-- <img src="{{ url_for('static',filename='yin.png') }}" width="1250" height="70"> -->
  <br><br><br><br>
- <center><h1 style="color: black;">Product Name:{{p_name}}</h1></center>
- <br><br>
-<center>
-<TABLE BORDER="5"    WIDTH="50%"   CELLPADDING="4" CELLSPACING="3">
-   
-   <TR>
-      <TH style="color: #ff1a1a;">Positive Review</TH>
-      <TH style="color: #ff1a1a;">Negative Review</TH>
-   </TR>
-   <TR ALIGN="CENTER">
-      <TD>{{p_re[0]}}</TD>
-      <TD>{{n_re[0]}}</TD>
-   </TR>
-   <TR ALIGN="CENTER">
-      <TD>{{p_re[1]}}</TD>
-      <TD>{{n_re[1]}}</TD>
-   </TR>
-   <TR ALIGN="CENTER">
-      <TD>{{p_re[2]}}</TD>
-      <TD>{{n_re[2]}}</TD>
-   </TR>
-</TABLE>
-</center>
- 
- <br><br>
-<form action="/customer">
-<div align="center">
- <div class="b1">
-   <button class="b1" type="submit" height="100" width="300">Back</button>
 
+ <div style="background-color: #F6F6F6; float: left;">
+   <div class="container">
+      <img src="{{metadata['imgLink']}}" alt="Notebook" style="width:35%;">
+      <div class="content">
+        <h1>{{metadata['p_name']}}</h1>
+        <p>{{metadata['total_no_reviews']}} Reviews..</p>
+      </div>
+    </div>
 </div>
+<div style="padding-right: 9%; background-color: #F6F6F6; float: left;">
+   <table>
+      <tr>
+         <td><b>PRODUCT NAME: </b></td>
+         <td>{{metadata['p_name']}}</td>
+      </tr>
+      <tr>
+         <td><b>Total Number of Reviews: </b></td>
+         <td>{{metadata['total_no_reviews']}}</td>
+      </tr>
+   </table>
+    </div>
 </div>
-</form>
- 
+
+
+ <div style="background-color: #F6F6F6;clear: both;">
+  <center>
+  <TABLE BORDER="0"    WIDTH="100%"   CELLPADDING="4" CELLSPACING="3">
+     
+     {{metadata}}
+     <TR>
+        <TH style="color: green;">Positive Review({{p_re_len}})</TH>
+        <TH style="color: #ff1a1a;">Negative Review({{n_re_len}})</TH>
+     </TR>
+     <TR ALIGN="CENTER">
+        <TD>{{p_re[0]}}</TD>
+        <TD>{{n_re[0]}}</TD>
+     </TR>
+     <TR ALIGN="CENTER">
+        <TD>{{p_re[1]}}</TD>
+        <TD>{{n_re[1]}}</TD>
+     </TR>
+     <TR ALIGN="CENTER">
+        <TD>{{p_re[2]}}</TD>
+        <TD>{{n_re[2]}}</TD>
+     </TR>
+     <TR ALIGN="CENTER">
+        <TD>{{p_re[3]}}</TD>
+        <TD>{{n_re[3]}}</TD>
+     </TR>
+     <TR ALIGN="CENTER">
+        <TD>{{p_re[4]}}</TD>
+        <TD>{{n_re[4]}}</TD>
+     </TR>
+  </TABLE>
+  </center>
+   
+   <br><br>
+  <form action="/customer">
+  <div align="center">
+   <div class="b1">
+     <button class="b1" type="submit" height="100" width="300">Back</button>
+  
+  </div>
+  </div>
+  </form>
+   
+
+
+ </div>
+
 
 </body>
 </html>

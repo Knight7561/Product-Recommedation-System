@@ -26,7 +26,26 @@
  <center><img src="{{ url_for('static',filename='head.png') }}" width="1200" height="70"></center>
  <br><br><br><br>
 
- <center>
+ <!-- {{reviewcount}} -->
+<center>
+  <b><label style="color: white;"><h1>Select Product</h1></label></b>
+ {%for i in range(productname.index["start"], productname.index["stop"],productname.index["step"])%}
+ <div class="w3-container">
+  <div style="background-color: aliceblue; width: 60%;" class="w3-card-4">
+    <div class="w3-container">
+      <p>No. of Reviews: {{reviewcount[i]}}</p>
+      <hr>
+      <img src="https://images-na.ssl-images-amazon.com/images/I/618IdSgnVvL._UX342_.jpg" alt="Avatar" class="w3-left w3-circle w3-margin-right" style="width:60px">
+      <p>{{productname[i]}}</p><br>
+    </div>
+    <input type="button" class="w3-button w3-block w3-dark-grey" onclick="window.location.href='predictSeller?q2=1';" value="Get Feedback" />
+  </div>
+</div>
+<br><br>
+{%endfor%} 
+</center>
+
+ <!-- <center>
   <div class="w3-container">
     <div style="background-color: aliceblue; width: 60%;" class="w3-card-4">
       <div class="w3-container">
@@ -88,10 +107,10 @@
   </div>
   <br><br>
   
-</center>
+</center> -->
 
 
- <form method="GET" action="/predictSeller" class="register-form" id="register-form" role="form">
+ <!-- <form method="GET" action="/predictSeller" class="register-form" id="register-form" role="form">
 <div class="center">
   <div class="b4">
 
@@ -135,6 +154,6 @@
 </div>
 <br><br>
 
- </form>
+ </form> -->
 </body>
 </html>
