@@ -184,23 +184,29 @@ def recom(userID,seller):
 
 @app.route("/")
 def index():
+    print("###############IN INDEX###############")
     return render_template("indexHome.html")
 
 @app.route("/customer")
 def indexCustomer():
+    print("###############IN indexCustomer ###############")
     return render_template("indexCustomer.html")
 
 @app.route("/seller")
 def indexSeller():
+    print("###############IN indexSeller ###############")
     return render_template("sellerSelect.html")
 
 
 def predict_result(data,text):
+    # print("###############IN predict_result ###############")
     p_review = []
     n_review = []
     str_path = os.path.join(model_dir,model_str_file)
     wt_path = os.path.join(model_dir,model_weights_file)
     model = load_trained_model(str_path, wt_path)
+    # print("str_path",str_path,"   wt_path",wt_path)
+    # print(data,"###########",text)
     result = model.predict(data)
     #print("Predicted result without flattening is ",result)
     Y_pred = np.round(result.flatten())
@@ -217,7 +223,9 @@ def predict_result(data,text):
 
 @app.route('/res' ,methods=['POST','GET'])
 def res():
+    print("###############IN res ###############")
     global review_file
+    print("file chopopsen foe rev is ",review_file)
     product = []
     if request.method == 'POST':
         product.append(request.form['q1'])
@@ -251,9 +259,9 @@ def res():
     p_review,n_review = predict_result(data=data,text=cleaned_text)
 
     #print("len of positive is",len(p_review),"len of negetive is",len(n_review))
-    p_re = random.sample(p_review,5)
+    p_re = random.sample(p_review,3)
     # p_keys = random.sample(p_key,3)
-    n_re = random.sample(n_review,5)
+    n_re = random.sample(n_review,3)
     # n_keys = random.sample(n_key,3)
 
      
@@ -262,9 +270,17 @@ def res():
     #DISABLE COMMENTprint(p_re,'\n',n_re)
 
     #Collection of metadata about the product
-    df_metadata_watch=pd.read_csv("input/watch_analystics_final.csv")
+    global product_category
+    if (product_category=="Watches"):
+        df_metadata_watch=pd.read_csv("input/watch_analystics_final.csv")
+    elif(product_category=="Camera"):
+        df_metadata_watch=pd.read_csv("input/camera_analystics_final.csv")
+    print("line 276",product_category)
+
+
     for e,i in df_metadata_watch.iterrows():
         if(i['Product_name']==p_name):
+            print("i['Product_name'] is ",i['Product_name'])
             metadata={}
             metadata['p_name']=i["Product_name"]
             metadata["total_no_reviews"]=i["Total"]
@@ -275,21 +291,40 @@ def res():
             metadata["rate_5"]=i["5_star"]
             metadata["imgLink"]=i["Image_Link"]
     print("\n\n\n\n\nmetadata is",metadata)
-    return render_template("result1Customer.html",p_name=p_name,p_re=p_re,n_re=n_re,p_re_len=len(p_review),n_re_len=len(n_review),metadata=metadata)
+
+    labels = [
+    'Positive','Negetive'
+    ]
+
+    values = [
+    len(p_review), len(n_review)
+    ]
+
+    colors = [
+    "#39e600", "red"]
+
+    bar_max=max(metadata["rate_1"],metadata["rate_2"],metadata["rate_3"],metadata["rate_4"],metadata["rate_5"])
+
+    bar_labels=["5-Star","4-Star","3-Star","2-Star","1-Star",]
+    bar_values=[metadata["rate_5"],metadata["rate_4"],metadata["rate_3"],metadata["rate_2"],metadata["rate_1"]]
+
+    return render_template("result2Customer.html",p_name=p_name,p_re=p_re,n_re=n_re,p_re_len=len(p_review),n_re_len=len(n_review),metadata=metadata,set=zip(values, labels, colors),bar_labels=bar_labels, bar_values=bar_values,bar_max=bar_max)
 
 @app.route('/predictCustomer' ,methods=['POST','GET'])
 def predictCustomer():
+    print("###############IN predictCustomer ###############")
     print("q3 is ",request.form['q3'])
     if((int(request.form['q3'])==2)):
         global review_file
+        global product_category
         product_category="Camera"
         model_str_file=model_str_file_camera
         model_weights_file=model_weights_file_camera
         cword_file = 'cword_dict.pkl'
         tokenizer_file=tokenizer_file_camera
         review_file=review_file_camera
-        print("Items to be stocked at ",review_file)
-        p=['Canon SX50', 'Canon T5 Bundle v2',
+        p=['Canon SX50', 
+       'Canon T5 Bundle v2',
        'Nikon COOLPIX AW100 16 MP CMOS Waterproof Digital Camera with GPS and Full HD 1080p Video',
        'Nikon COOLPIX AW110 16 MP Waterproof Digital Camera with Built-In Wi-Fi',
        'Nikon COOLPIX S3600 20.1 MP Digital Camera with 8x Zoom NIKKOR Lens and 720p HD Video',
@@ -325,6 +360,23 @@ def predictCustomer():
             names.append(p[i])
         # print("names is: ",names)
         # df1['product_name'].unique()
+        c1 = ['Canon SX50', 
+       'Canon T5 Bundle v2',
+       'Nikon COOLPIX AW100 16 MP CMOS Waterproof Digital Camera with GPS and Full HD 1080p Video',
+       'Nikon COOLPIX AW110 16 MP Waterproof Digital Camera with Built-In Wi-Fi',
+       'Nikon COOLPIX S3600 20.1 MP Digital Camera with 8x Zoom NIKKOR Lens and 720p HD Video']
+        c2 = ['Samsung SNH-1011 Wireless IP Camera',
+       'Samsung WB1100F 16.2MP CMOS Smart WiFi & NFC Digital Camera with 35x Optical Zoom, 3.0" LCD and 1080p HD Video',
+       'Sony Alpha a5000 Mirrorless Digital Camera with 16-50mm OSS Lens (White)',
+       'Nikon COOLPIX AW120', 'Nikon Coolpix L330 Digital Camera (Black)',
+       'Nikon COOLPIX L810 16.1 MP Digital Camera with 26x Zoom NIKKOR ED Glass Lens and 3-inch LCD']
+        if len(names) <= 0 and cell[0] == 1:
+            for i in c1:
+                names.append(i)
+        elif len(names) <= 0 and cell[0] == 2:
+            for i in c2:
+                names.append(i)
+        # print("names after apend is",names)
     else:
         product_category="Watches"
         model_str_file = 'model_structure.json'
@@ -396,96 +448,187 @@ def predictCustomer():
 
 @app.route('/sellerWatch' ,methods=['POST','GET'])
 def sellerWatch():
+    global product_category
+    global review_file
+    product_category="Watches"
+    model_str_file = 'model_structure.json'
+    model_weights_file = 'model_weights.h5'
+    cword_file = 'cword_dict.pkl'
+    tokenizer_file = 'tokens.pkl'
+    review_file="input/Final_reviews.csv"
+    print("###############IN sellerWatch ###############")
     id=(int((request.args['id'])))
-    df_items=pd.read_csv("input/Final_reviews.csv")
+    df_items=pd.read_csv(review_file)
     items_numbers=df_items.product_name.value_counts().rename_axis('Product names').reset_index(name='Count')
     print("items_numbers ",items_numbers)
+    
+    if (product_category=="Watches"):
+        df_metadata_watch=pd.read_csv("input/watch_analystics_final.csv")
+    elif(product_category=="Camera"):
+        df_metadata_watch=pd.read_csv("input/camera_analystics_final.csv")
+    print("line 276",product_category)
+
+
+    metadataArray=[]
+    for i in range(0,len(items_numbers)):
+        this_name=items_numbers['Product names'][i]
+        for e,i in df_metadata_watch.iterrows():
+            if(i['Product_name']==this_name):
+                print("i['Product_name'] is ",i['Product_name'])
+                metadata={}
+                metadata['p_name']=i["Product_name"]
+                metadata["total_no_reviews"]=i["Total"]
+                metadata["rate_1"]=i["1_star"]
+                metadata["rate_2"]=i["2_star"]
+                metadata["rate_3"]=i["3_star"]
+                metadata["rate_4"]=i["4_star"]
+                metadata["rate_5"]=i["5_star"]
+                metadata["imgLink"]=i["Image_Link"]
+                metadataArray.append(metadata)
+    print("\n\n\n\n\nmetadata is",metadata)
     if(id==1):
-        return render_template("indexSeller.html" , productname=items_numbers['Product names'][0:11],reviewcount=items_numbers['Count'][0:11])
+        return render_template("indexSeller.html" , productname=items_numbers['Product names'][0:11],reviewcount=items_numbers['Count'][0:11],metadataArray=metadataArray[0:11])
     elif(id==2):
-        return render_template("indexSeller.html" , productname=items_numbers['Product names'][11:],reviewcount=items_numbers['Count'][11:])
+        return render_template("indexSeller.html" , productname=items_numbers['Product names'][11:],reviewcount=items_numbers['Count'][11:],metadataArray=metadataArray)
 
 @app.route('/sellerCamera' ,methods=['POST','GET'])
 def sellerCamera():
+    global review_file
+    global product_category
+    product_category="Camera"
+    model_str_file=model_str_file_camera
+    model_weights_file=model_weights_file_camera
+    cword_file = 'cword_dict.pkl'
+    tokenizer_file=tokenizer_file_camera
+    review_file=review_file_camera
+    print("###############IN sellerWatch ###############")
+    id=(int((request.args['id'])))
     id=(int((request.args['id'])))
     df_items=pd.read_csv("input/Connected Camera reviews.csv")
     items_numbers=df_items.product_name.value_counts().rename_axis('Product names').reset_index(name='Count')
-    # print("items_numbers ",items_numbers['Product names'][11:])
+
+    if (product_category=="Watches"):
+        df_metadata_watch=pd.read_csv("input/watch_analystics_final.csv")
+    elif(product_category=="Camera"):
+        df_metadata_watch=pd.read_csv("input/camera_analystics_final.csv")
+    print("line 276",product_category)
+
+
+    metadataArray=[]
+    for i in range(0,len(items_numbers)):
+        this_name=items_numbers['Product names'][i]
+        for e,i in df_metadata_watch.iterrows():
+            if(i['Product_name']==this_name):
+                print("i['Product_name'] is ",i['Product_name'])
+                metadata={}
+                metadata['p_name']=i["Product_name"]
+                metadata["total_no_reviews"]=i["Total"]
+                metadata["rate_1"]=i["1_star"]
+                metadata["rate_2"]=i["2_star"]
+                metadata["rate_3"]=i["3_star"]
+                metadata["rate_4"]=i["4_star"]
+                metadata["rate_5"]=i["5_star"]
+                metadata["imgLink"]=i["Image_Link"]
+                metadataArray.append(metadata)
+    print("\n\n\n\n\nmetadata is",metadata)
     if(id==1):
-        return render_template("indexSeller.html" , productname=items_numbers['Product names'][0:11],reviewcount=items_numbers['Count'][0:11])
+        return render_template("indexSeller.html" , productname=items_numbers['Product names'][0:11],reviewcount=items_numbers['Count'][0:11],metadataArray=metadataArray[0:11])
     elif(id==2):
-        return render_template("indexSeller.html" , productname=items_numbers['Product names'][11:],reviewcount=items_numbers['Count'][11:])
+        return render_template("indexSeller.html" , productname=items_numbers['Product names'][11:],reviewcount=items_numbers['Count'][11:],metadataArray=metadataArray)
 
 
 @app.route('/predictSeller' ,methods=['POST','GET'])
-def predictSeller():
-    p = ['Geneva Platinum Silicone Strap Analogue Watch for Women & Girls - GP-379',
-       "Geneva Platinum Analogue Gold Dial Women's Watch -GNV01",
-       "IIk Collection Watches Stainless Steel Chain Day and Date Analogue Silver Dial Women's Watch",
-       "NUBELA Analogue Prizam Glass Black Dial Girl's Watch",
-       'Analogue Pink',
-       "Sonata Analog Champagne Dial Women's Watch-NK87018YM01",
-       "Sonata Analog White Dial Women's Watch -NJ8989PP03C",
-       "Everyday Analog Black Dial Women's Watch -NK8085SM01",
-       "Sonata SFAL Analog Silver Dial Women's Watch -NK8080SM01",
-       "Timewear Analogue Round Beige Dial Women's Watch - 107Wdtl",
-       "TIMEWEAR Analogue Brown Dial Women's Watch - 134Bdtl",
-       "Sonata SFAL Analog Silver Dial Women's Watch -NK8080SM-3372",
-       "Adamo Analog Blue Dial Women's Watch-9710SM01",
-       "ADAMO Aritocrat Women's & Girl's Watch BG-335",
-       "Imperious Analog Women's Watch 1021-1031",
-       "IIK Collection Watches Analogue Silver Dial Girl's & Women's Analogue Watch - IIK-1033W",
-       "Sonata Analog White Dial Women's Watch -NJ8976SM01W",
-       "Geneva Platinum Analogue Rose Gold Dial Women'S Watch- Gp-649",
-       "Geneva Platinum Analogue Rose Gold Dial Women's Watch- Gp-649",
-       "A R Sales Analogue Girl's and Women's Watch",
-       "Foxter Bangel Analog White Dial Women's Watch",
-       'Howdy Women Watch']
+def resSeller():
+    print("###############IN res ###############")
+    global review_file
+    global product_category
+    print("file chopopsen foe rev is ",review_file," in ",product_category)
     product = []
     if request.method == 'POST':
-        product.append(int((request.form['q2'])))
-    if request.method == 'GET':
-        product.append(int((request.args['q2'])))
-
-    print(product)
-    df1 = pd.read_csv("input/Final_reviews.csv")
-
-    # df1['product_name'].unique()
-    p_name = p[product[0]-1]
-
-
+        reqPackage=request.form['q1']
+        print("reqPackage slice is ",reqPackage[17:])
+        product.append(reqPackage[17:])
+    print("Product selected is ",product)
+    p_name = product[0]
+    print(p_name)
     core_review = []
-    
+    print("review file path is ",review_file)
+    df1 = pd.read_csv(review_file)###########
+    # print("df1 is ",df1)
     for i,j in df1.iterrows():
         if j['product_name'] == p_name:
             # if j['Experience'] >= 5 and j['Helpful_Votes'] >=20 and j['Purchase'] == 'Verified Purchase':
             core_review.append(j['Text'])   
 
+    #print("Core Reviews before cleaning is",core_review)
     cleaned_text = clean_review(core_review)
+    #print("Core Reviews After cleaning is",cleaned_text)
 
     trained_tokenizer = pkl.load(open(os.path.join(model_dir,tokenizer_file),'rb'))
-    sequences_text_token = trained_tokenizer.texts_to_sequences(cleaned_text)
+    sequences_text_token = trained_tokenizer.texts_to_sequences(cleaned_text)#################
+    #print("sequences_text_token is",sequences_text_token)
 
     data = pad_sequences(sequences_text_token, maxlen=140)
-    print(data)
+    #print("data is ",data,"   dd")
+    #DISABLE COMMENTprint(data)
 
     # p_cleaned_text = clean_review(p_review)
     # n_cleaned_text = clean_review(n_review)
+    # print("before function call parameters 12321323   = ",data,cleaned_text)
 
     p_review,n_review = predict_result(data=data,text=cleaned_text)
 
-    
-    p_re = random.sample(p_review,3)
+    #print("len of positive is",len(p_review),"len of negetive is",len(n_review))
+    p_re = random.sample(p_review,5)
     # p_keys = random.sample(p_key,3)
-    n_re = random.sample(n_review,3)
+    n_re = random.sample(n_review,5)
     # n_keys = random.sample(n_key,3)
 
      
     # res = [p_name,p_re,p_keys,n_re,n_keys]
         
-    print(p_re,'\n',n_re)
+    #DISABLE COMMENTprint(p_re,'\n',n_re)
 
-    return render_template("result1Seller.html" , p_name = p_name,p_re = p_re, n_re=n_re)
+    #Collection of metadata about the product
+    if (product_category=="Watches"):
+        df_metadata_watch=pd.read_csv("input/watch_analystics_final.csv")
+    elif(product_category=="Camera"):
+        df_metadata_watch=pd.read_csv("input/camera_analystics_final.csv")
+    print("line 276",product_category)
+
+
+    for e,i in df_metadata_watch.iterrows():
+        if(i['Product_name']==p_name):
+            print("i['Product_name'] is ",i['Product_name'])
+            metadata={}
+            metadata['p_name']=i["Product_name"]
+            metadata["total_no_reviews"]=i["Total"]
+            metadata["rate_1"]=i["1_star"]
+            metadata["rate_2"]=i["2_star"]
+            metadata["rate_3"]=i["3_star"]
+            metadata["rate_4"]=i["4_star"]
+            metadata["rate_5"]=i["5_star"]
+            metadata["imgLink"]=i["Image_Link"]
+    print("\n\n\n\n\nmetadata is",metadata)
+
+    labels = [
+    'Positive','Negetive'
+    ]
+
+    values = [
+    len(p_review), len(n_review)
+    ]
+
+    colors = [
+    "#39e600", "red"]
+
+    bar_max=max(metadata["rate_1"],metadata["rate_2"],metadata["rate_3"],metadata["rate_4"],metadata["rate_5"])
+
+    bar_labels=["5-Star","4-Star","3-Star","2-Star","1-Star",]
+    bar_values=[metadata["rate_5"],metadata["rate_4"],metadata["rate_3"],metadata["rate_2"],metadata["rate_1"]]
+
+    return render_template("result1Seller.html",p_name=p_name,p_re=p_re,n_re=n_re,p_re_len=len(p_review),n_re_len=len(n_review),metadata=metadata,set=zip(values, labels, colors),bar_labels=bar_labels, bar_values=bar_values,bar_max=bar_max)
+
 
 if __name__ == '__main__':
     app.run(debug=True,threaded=False)

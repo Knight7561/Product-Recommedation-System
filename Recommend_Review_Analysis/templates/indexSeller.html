@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <style type="text/css">
+
   #example1 {
    background-image:url("static/min.jpeg");
   background-repeat: repeat;
@@ -23,26 +24,39 @@
     
 
 
- <center><img src="{{ url_for('static',filename='head.png') }}" width="1200" height="70"></center>
+ <center><img src="{{ url_for('static',filename='productAnalyserPic.png') }}" width="1200" height="70"></center>
  <br><br><br><br>
 
  <!-- {{reviewcount}} -->
 <center>
   <b><label style="color: white;"><h1>Select Product</h1></label></b>
- {%for i in range(productname.index["start"], productname.index["stop"],productname.index["step"])%}
- <div class="w3-container">
-  <div style="background-color: aliceblue; width: 60%;" class="w3-card-4">
+  <form method="POST" action="/predictSeller">
+    {%for i in range(productname.index["start"], productname.index["stop"],productname.index["step"])%}
     <div class="w3-container">
-      <p>No. of Reviews: {{reviewcount[i]}}</p>
-      <hr>
-      <img src="https://images-na.ssl-images-amazon.com/images/I/618IdSgnVvL._UX342_.jpg" alt="Avatar" class="w3-left w3-circle w3-margin-right" style="width:60px">
-      <p>{{productname[i]}}</p><br>
+     <div style="background-color: aliceblue; width: 60%;" class="w3-card-4">
+       <div class="w3-container">
+         <p>No. of Reviews: {{reviewcount[i]}}</p>
+         <hr>
+         <img src="{{metadataArray[i]['imgLink']}}" alt="{{metadataArray[i]}}{{i}}" class="w3-left w3-circle w3-margin-right" style="width:60px">
+         <p>{{productname[i]}}</p><br>
+       </div>
+       <input type="submit" class="w3-button w3-block w3-dark-grey" name="q1" value="Get Feedback for {{productname[i]}}">
+     </div>
+   </div>
+   <br><br>
+   {%endfor%}
+  
+   
+   </form>
+
+   <form action="/seller">
+    <div align="center">
+     <div class="b1">
+       <button class="b1" type="submit" height="100" width="300">Back</button>
+    
     </div>
-    <input type="button" class="w3-button w3-block w3-dark-grey" onclick="window.location.href='predictSeller?q2=1';" value="Get Feedback" />
-  </div>
-</div>
-<br><br>
-{%endfor%} 
+    </div>
+    </form>
 </center>
 
  <!-- <center>

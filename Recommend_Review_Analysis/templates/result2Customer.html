@@ -11,6 +11,10 @@
 <style type="text/css">
   td,tr{
     padding: 10px;
+    width: 50%;
+  }
+  td{
+    
   }
 
   /* table    { border:ridge 5px red; background-color:#F6F6F6; color:#FFF; }
@@ -18,13 +22,16 @@
   
   #example1 {
    background-image:url("static/min.jpeg");
-  background-repeat: repeat;
+  background-repeat: no-repeat;
   background-size: 1500px 800px ;
+  background-attachment: fixed ;
+  
 }
   
 .container {
   position: relative;
-  max-width: 800px; /* Maximum width */
+  width: 405px;
+  max-width: 500px; /* Maximum width */
   margin: 0; /* Center it */
 }
 </style>
@@ -33,19 +40,16 @@
   
   
 
-  <center><img src="{{ url_for('static',filename='head.png') }}" width="1200" height="70"></center> 
+  <center><img src="{{ url_for('static',filename='ecomRecomPic.png') }}" width="1200" height="70"></center> 
  <!-- <img src="{{ url_for('static',filename='yin.png') }}" width="1250" height="70"> -->
  <br><br><br><br>
 
  <div style="background-color: #F6F6F6; float: left;">
    <div class="container">
-      <img src="{{metadata['imgLink']}}" alt="Notebook" style="width:fit-content">
-      <div class="content">
-        <h4>{{metadata['p_name']}}</h4>
-      </div>
+      <img src="{{metadata['imgLink']}}" alt="Notebook" style="width:min-content;height: 482px;   max-width: 400px; ">
     </div>
 </div>
-<div style="padding-right: 9%; background-color: #F6F6F6; float: left;">
+<div style="padding-right: 1%; background-color: #F6F6F6; float: left; height: 486px; width: 1000px;">
    <table>
       <tr>
          <td><b>PRODUCT NAME: </b></td>
@@ -55,9 +59,14 @@
          <td><b>Total Number of Reviews: </b></td>
          <td>{{metadata['total_no_reviews']}}</td>
       </tr>
+      <tr>
+        <td>
+          <b>Review Stats: </b>
+        </td>
+      </tr>
    </table>
-   <canvas id="pieChart" width="600" height="400"></canvas>
-   <canvas id="bar_chart" width="600" height="400"></canvas>
+   <center>
+   <canvas id="pieChart" width="450" height="400"></canvas></center>
     </div>
 </div>
 <script>
@@ -77,85 +86,34 @@
 </script>
 
 
-<!--  -->
-
-<center>
-  
-   <script>
-     // bar chart data
-     var barData = {
-        type:'horizontalBar',
-       labels : [
-         {% for item in bar_labels %}
-          "{{ item }}",
-         {% endfor %}
-  ],
-
-       datasets : [{
-         fillColor: "rgba(151,187,205,0.2)",
-         strokeColor: "rgba(151,187,205,1)",
-         pointColor: "rgba(151,187,205,1)",
-         data : [
-           {% for item in bar_values %}
-              "{{ item }}",
-             {% endfor %}
-      ]
-         }
-       ]
-     }
-
-    // get bar chart canvas
-    var mychart = document.getElementById("bar_chart").getContext("2d");
-
-      steps = 10
-      max = {{bar_max}}
-
-    // draw bar chart
-    new Chart(mychart).Bar(barData, {
-      scaleOverride: true,
-      scaleSteps: steps,
-      scaleStepWidth: Math.ceil(max / steps),
-      scaleStartValue: 0,
-      scaleShowVerticalLines: true,
-      scaleShowGridLines : true,
-      barShowStroke : true,
-      scaleShowLabels: true
-      }
-    );
-
-   </script>
- </center>
-
-
- <div style="background-color: #F6F6F6;clear: both;">
+ <div style="background-color: #F6F6F6;clear: both; padding: 50px; padding-top: 100px;">
   <center>
-  <TABLE BORDER="0"    WIDTH="100%"   CELLPADDING="4" CELLSPACING="3">
+  <TABLE WIDTH="100%"   CELLPADDING="4" CELLSPACING="3">
      
-     {{metadata}}
      <TR>
         <TH style="color: green;">Positive Review({{p_re_len}})</TH>
         <TH style="color: #ff1a1a;">Negative Review({{n_re_len}})</TH>
      </TR>
      <TR ALIGN="CENTER">
-        <TD>{{p_re[0]}}</TD>
-        <TD>{{n_re[0]}}</TD>
+        <TD style="border-right: 1px solid #080808;border-bottom: 1px solid #cdd0d4;">{{p_re[0]}}</TD>
+        <TD style="border-bottom: 1px solid #cdd0d4;">{{n_re[0]}}</TD>
      </TR>
      <TR ALIGN="CENTER">
-        <TD>{{p_re[1]}}</TD>
-        <TD>{{n_re[1]}}</TD>
+        <TD style="border-right: 1px solid #080808;border-bottom: 1px solid #cdd0d4;">{{p_re[1]}}</TD>
+        <TD style="border-bottom: 1px solid #cdd0d4;">{{n_re[1]}}</TD>
      </TR>
      <TR ALIGN="CENTER">
-        <TD>{{p_re[2]}}</TD>
-        <TD>{{n_re[2]}}</TD>
+        <TD style="border-right: 1px solid #080808;border-bottom: 1px solid #cdd0d4;">{{p_re[2]}}</TD>
+        <TD style="border-bottom: 1px solid #cdd0d4;">{{n_re[2]}}</TD>
+     </TR>
+     <!-- <TR ALIGN="CENTER">
+        <TD style="border-right: 1px solid #080808;border-bottom: 1px solid #cdd0d4;">{{p_re[3]}}</TD>
+        <TD style="border-bottom: 1px solid #cdd0d4;">{{n_re[3]}}</TD>
      </TR>
      <TR ALIGN="CENTER">
-        <TD>{{p_re[3]}}</TD>
-        <TD>{{n_re[3]}}</TD>
-     </TR>
-     <TR ALIGN="CENTER">
-        <TD>{{p_re[4]}}</TD>
-        <TD>{{n_re[4]}}</TD>
-     </TR>
+        <TD style="border-right: 1px solid #080808;border-bottom: 1px solid #cdd0d4;">{{p_re[4]}}</TD>
+        <TD style="border-bottom: 1px solid #cdd0d4;">{{n_re[4]}}</TD>
+     </TR> -->
   </TABLE>
   </center>
    
