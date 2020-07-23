@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, flash, redirect, url_for
 from flask_debug import Debug
 from werkzeug.utils import secure_filename
 
-#lib for face Recognation
 import os
 import re
 import ftfy
@@ -443,8 +442,50 @@ def predictCustomer():
             for i in c2:
                 names.append(i)
         # print("names after apend is",names)
-    return render_template("recomCustomer.html" , p_name = names)
+        #############################################
+        ############################################
+        
+    if (product_category=="Watches"):
+        df_metadata_watch=pd.read_csv("input/watch_analystics_final.csv")
+    elif(product_category=="Camera"):
+        df_metadata_watch=pd.read_csv("input/camera_analystics_final.csv")
+    print("line 276",product_category)
+    print("len of names is ",len(names))
 
+    for f in range(0,len(names)):
+        print("f value is ", f)
+
+    metadata_p_name={}
+    for f in range(0,len(names)):
+        print("fffffffffffffff",f,names[f])
+        for e,i in df_metadata_watch.iterrows():
+            if(i['Product_name']==names[f]):
+                print("i['Product_name'] is ",i['Product_name'])
+                metadata={}
+                metadata['p_name']=i["Product_name"]
+                metadata["total_no_reviews"]=i["Total"]
+                metadata["rate_1"]=i["1_star"]
+                metadata["rate_2"]=i["2_star"]
+                metadata["rate_3"]=i["3_star"]
+                metadata["rate_4"]=i["4_star"]
+                metadata["rate_5"]=i["5_star"]
+                metadata["imgLink"]=i["Image_Link"]
+                average_rating=(5*metadata["rate_5"]+4*metadata["rate_4"]+3*metadata["rate_3"]+2*metadata["rate_2"]+1*metadata["rate_1"])/(metadata["total_no_reviews"])
+                print("average_rating ",average_rating)
+                metadata_p_name[names[f]]= average_rating
+                print("\n\n\n\n\nmetadata is",metadata)
+    #print("metadata_p_name",metadata_p_name)
+    sortedmetadata_p_name=sorted(metadata_p_name.items(), key = 
+             lambda kv:(kv[1], kv[0]),reverse=True)
+    print("\n sortedmetadata_p_name",sortedmetadata_p_name) 
+    sortedNames=[]
+    for i in sortedmetadata_p_name:
+        sortedNames.append(i[0])
+
+    
+
+    #return render_template("recomCustomer.html" , p_name = names)
+    return render_template("recomCustomer.html" , p_name = sortedNames)
 
 @app.route('/sellerWatch' ,methods=['POST','GET'])
 def sellerWatch():
